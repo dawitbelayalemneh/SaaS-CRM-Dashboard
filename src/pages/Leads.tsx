@@ -237,13 +237,13 @@ export default function Leads() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLeads.length === 0 ? (
+              {paginatedLeads.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     {leads.length === 0 ? "No leads yet. Add your first lead!" : "No leads match your filters."}
                   </TableCell>
                 </TableRow>
-              ) : filteredLeads.map((lead) => (
+              ) : paginatedLeads.map((lead) => (
                 <TableRow key={lead.id} className="cursor-pointer" onClick={() => setViewing(lead)}>
                   <TableCell className="font-medium">{lead.name}</TableCell>
                   <TableCell>{lead.email}</TableCell>
@@ -261,15 +261,22 @@ export default function Leads() {
               ))}
             </TableBody>
           </Table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredLeads.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
         {/* Mobile Card List */}
         <div className="md:hidden space-y-3">
-          {filteredLeads.length === 0 ? (
+          {paginatedLeads.length === 0 ? (
             <div className="text-center text-muted-foreground py-8 text-sm">
               {leads.length === 0 ? "No leads yet. Add your first lead!" : "No leads match your filters."}
             </div>
-          ) : filteredLeads.map((lead) => (
+          ) : paginatedLeads.map((lead) => (
             <Card key={lead.id} className="cursor-pointer active:scale-[0.99] transition-transform" onClick={() => setViewing(lead)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -290,6 +297,13 @@ export default function Leads() {
               </CardContent>
             </Card>
           ))}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredLeads.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>

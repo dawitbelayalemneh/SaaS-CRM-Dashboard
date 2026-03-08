@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { TaskRecommendations } from "@/components/TaskRecommendations";
+import { SalesInsightsCard } from "@/components/SalesInsightsCard";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend,
@@ -217,6 +218,9 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+
+        {/* AI Sales Insights */}
+        <SalesInsightsCard />
 
         {/* AI Recommendations + Activity */}
         <div className="grid gap-6 lg:grid-cols-2">

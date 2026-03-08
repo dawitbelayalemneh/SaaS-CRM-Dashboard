@@ -222,10 +222,8 @@ export default function Dashboard() {
         {/* AI Sales Insights */}
         <SalesInsightsCard />
 
-        {/* AI Recommendations + Activity */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <TaskRecommendations variant="card" />
-        </div>
+        {/* AI Recommendations */}
+        <TaskRecommendations variant="card" />
 
         <Card className="border-border/60 shadow-sm">
           <CardHeader className="pb-2">

@@ -274,11 +274,11 @@ export default function Contacts() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredContacts.length === 0 ? (
+              {paginatedContacts.length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   {contacts.length === 0 ? "No contacts yet." : "No contacts match your search."}
                 </TableCell></TableRow>
-              ) : filteredContacts.map((c) => {
+              ) : paginatedContacts.map((c) => {
                 const cd = getContactDeals(c.id);
                 return (
                   <TableRow key={c.id} className="cursor-pointer" onClick={() => setViewing(c)}>
@@ -309,6 +309,13 @@ export default function Contacts() {
               })}
             </TableBody>
           </Table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredContacts.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
         {/* Mobile Card List */}

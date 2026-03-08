@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { logActivity } from "@/lib/logActivity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, DollarSign, ArrowLeft, Calendar, Building2, StickyNote, Pencil, Trash2 } from "lucide-react";
@@ -75,22 +76,26 @@ export default function Deals() {
       const { error } = await supabase.from("deals").update(payload).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Deal updated");
+      await logActivity({ action: "Updated deal", entityType: "deal", entityId: editing.id, entityName: form.title });
       if (viewing?.id === editing.id) {
         setViewing({ ...viewing!, ...payload, value: payload.value });
       }
     } else {
-      const { error } = await supabase.from("deals").insert({ ...payload, user_id: user!.id });
+      const { data, error } = await supabase.from("deals").insert({ ...payload, user_id: user!.id }).select("id").single();
       if (error) { toast.error(error.message); return; }
       toast.success("Deal created");
+      await logActivity({ action: "Created new deal", entityType: "deal", entityId: data?.id, entityName: form.title, details: `Value: $${payload.value?.toLocaleString() || 0}` });
     }
     setOpen(false);
     fetchDeals();
   };
 
   const handleDelete = async (id: string) => {
+    const deal = deals.find((d) => d.id === id);
     const { error } = await supabase.from("deals").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Deal deleted");
+    await logActivity({ action: "Deleted deal", entityType: "deal", entityId: id, entityName: deal?.title });
     if (viewing?.id === id) setViewing(null);
     fetchDeals();
   };
@@ -101,15 +106,20 @@ export default function Deals() {
     const dealId = result.draggableId;
     if (newStage === result.source.droppableId) return;
 
+    const deal = deals.find((d) => d.id === dealId);
+    const oldStageLabel = STAGES.find((s) => s.value === result.source.droppableId)?.label;
+    const newStageLabel = STAGES.find((s) => s.value === newStage)?.label;
+
     // Optimistic update
     setDeals((prev) => prev.map((d) => d.id === dealId ? { ...d, stage: newStage } : d));
 
     const { error } = await supabase.from("deals").update({ stage: newStage }).eq("id", dealId);
     if (error) {
       toast.error("Failed to update deal stage");
-      fetchDeals(); // revert
+      fetchDeals();
     } else {
-      toast.success(`Deal moved to ${STAGES.find((s) => s.value === newStage)?.label}`);
+      toast.success(`Deal moved to ${newStageLabel}`);
+      await logActivity({ action: "Deal stage changed", entityType: "deal", entityId: dealId, entityName: deal?.title, details: `${oldStageLabel} → ${newStageLabel}` });
     }
   };
 

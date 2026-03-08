@@ -11,6 +11,7 @@ import Leads from "./pages/Leads";
 import Contacts from "./pages/Contacts";
 import Deals from "./pages/Deals";
 import Settings from "./pages/Settings";
+import AdminUsers from "./pages/AdminUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/deals" element={<Deals />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

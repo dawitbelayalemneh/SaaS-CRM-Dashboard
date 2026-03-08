@@ -33,6 +33,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isAdmin } = useRole();
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -66,6 +67,32 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="px-4 pt-4 pb-1">
+              {!collapsed && <span className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">Admin</span>}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="px-2 space-y-1">
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                      >
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter className="bg-sidebar p-2">
         <SidebarMenu>

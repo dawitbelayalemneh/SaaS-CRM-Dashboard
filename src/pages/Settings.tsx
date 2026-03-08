@@ -42,8 +42,8 @@ export default function Settings() {
     <DashboardLayout>
       <div className="space-y-6 max-w-2xl">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">Manage your account settings</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground text-sm">Manage your account settings</p>
         </div>
 
         <Card>
@@ -60,7 +60,7 @@ export default function Settings() {
               <Label>Full Name</Label>
               <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Company</Label>
                 <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />

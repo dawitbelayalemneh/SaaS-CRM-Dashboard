@@ -14,6 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Search, Eye, ArrowLeft, Mail, Phone, Building2, StickyNote, Calendar, DollarSign, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Pagination } from "@/components/Pagination";
+
+const ITEMS_PER_PAGE = 10;
 
 type Deal = {
   id: string; title: string; value: number | null; stage: string;
@@ -42,6 +45,7 @@ export default function Contacts() {
   const [editing, setEditing] = useState<Contact | null>(null);
   const [viewing, setViewing] = useState<Contact | null>(null);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", job_title: "", notes: "" });
 
   const fetchData = async () => {
@@ -62,6 +66,15 @@ export default function Contacts() {
       [c.name, c.email, c.company, c.phone, c.job_title].filter(Boolean).some((f) => f!.toLowerCase().includes(q))
     );
   }, [contacts, search]);
+
+  const totalPages = Math.ceil(filteredContacts.length / ITEMS_PER_PAGE);
+  const paginatedContacts = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredContacts.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredContacts, currentPage]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => { setCurrentPage(1); }, [search]);
 
   const getContactDeals = (contactId: string) => deals.filter((d) => d.contact_id === contactId);
 
@@ -261,11 +274,11 @@ export default function Contacts() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredContacts.length === 0 ? (
+              {paginatedContacts.length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   {contacts.length === 0 ? "No contacts yet." : "No contacts match your search."}
                 </TableCell></TableRow>
-              ) : filteredContacts.map((c) => {
+              ) : paginatedContacts.map((c) => {
                 const cd = getContactDeals(c.id);
                 return (
                   <TableRow key={c.id} className="cursor-pointer" onClick={() => setViewing(c)}>
@@ -296,15 +309,22 @@ export default function Contacts() {
               })}
             </TableBody>
           </Table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredContacts.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
         {/* Mobile Card List */}
         <div className="md:hidden space-y-3">
-          {filteredContacts.length === 0 ? (
+          {paginatedContacts.length === 0 ? (
             <div className="text-center text-muted-foreground py-8 text-sm">
               {contacts.length === 0 ? "No contacts yet." : "No contacts match your search."}
             </div>
-          ) : filteredContacts.map((c) => {
+          ) : paginatedContacts.map((c) => {
             const cd = getContactDeals(c.id);
             return (
               <Card key={c.id} className="cursor-pointer active:scale-[0.99] transition-transform" onClick={() => setViewing(c)}>
@@ -330,6 +350,13 @@ export default function Contacts() {
               </Card>
             );
           })}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredContacts.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>

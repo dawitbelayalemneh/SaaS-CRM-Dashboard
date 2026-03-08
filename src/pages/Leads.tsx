@@ -15,6 +15,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, Search, Eye, ArrowLeft, Calendar, Building2, Mail, Phone, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Pagination } from "@/components/Pagination";
+
+const ITEMS_PER_PAGE = 10;
 
 type Lead = {
   id: string; name: string; email: string | null; phone: string | null;
@@ -45,6 +48,7 @@ export default function Leads() {
   const [viewing, setViewing] = useState<Lead | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", status: "new", source: "", notes: "" });
 
   const fetchLeads = async () => {
@@ -62,6 +66,15 @@ export default function Leads() {
       return matchesSearch && matchesStatus;
     });
   }, [leads, search, statusFilter]);
+
+  const totalPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
+  const paginatedLeads = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredLeads.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredLeads, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
 
   const openNew = () => { setEditing(null); setForm({ name: "", email: "", phone: "", company: "", status: "new", source: "", notes: "" }); setOpen(true); };
   const openEdit = (lead: Lead) => { setEditing(lead); setForm({ name: lead.name, email: lead.email || "", phone: lead.phone || "", company: lead.company || "", status: lead.status, source: lead.source || "", notes: lead.notes || "" }); setOpen(true); };
@@ -224,13 +237,13 @@ export default function Leads() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLeads.length === 0 ? (
+              {paginatedLeads.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     {leads.length === 0 ? "No leads yet. Add your first lead!" : "No leads match your filters."}
                   </TableCell>
                 </TableRow>
-              ) : filteredLeads.map((lead) => (
+              ) : paginatedLeads.map((lead) => (
                 <TableRow key={lead.id} className="cursor-pointer" onClick={() => setViewing(lead)}>
                   <TableCell className="font-medium">{lead.name}</TableCell>
                   <TableCell>{lead.email}</TableCell>
@@ -248,15 +261,22 @@ export default function Leads() {
               ))}
             </TableBody>
           </Table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredLeads.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
         {/* Mobile Card List */}
         <div className="md:hidden space-y-3">
-          {filteredLeads.length === 0 ? (
+          {paginatedLeads.length === 0 ? (
             <div className="text-center text-muted-foreground py-8 text-sm">
               {leads.length === 0 ? "No leads yet. Add your first lead!" : "No leads match your filters."}
             </div>
-          ) : filteredLeads.map((lead) => (
+          ) : paginatedLeads.map((lead) => (
             <Card key={lead.id} className="cursor-pointer active:scale-[0.99] transition-transform" onClick={() => setViewing(lead)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -277,6 +297,13 @@ export default function Leads() {
               </CardContent>
             </Card>
           ))}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredLeads.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>

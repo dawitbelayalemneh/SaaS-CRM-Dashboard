@@ -1,20 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Pencil, Trash2, Search, Eye, ArrowLeft, Calendar, Building2, Mail, Phone, StickyNote } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 type Lead = {
   id: string; name: string; email: string | null; phone: string | null;
   company: string | null; status: string; source: string | null; notes: string | null;
+  created_at: string; updated_at: string;
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -24,11 +28,22 @@ const STATUS_COLORS: Record<string, string> = {
   lost: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+const STATUSES = [
+  { value: "all", label: "All Statuses" },
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "qualified", label: "Qualified" },
+  { value: "lost", label: "Lost" },
+];
+
 export default function Leads() {
   const { user } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Lead | null>(null);
+  const [viewing, setViewing] = useState<Lead | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", status: "new", source: "", notes: "" });
 
   const fetchLeads = async () => {
@@ -37,6 +52,15 @@ export default function Leads() {
   };
 
   useEffect(() => { fetchLeads(); }, []);
+
+  const filteredLeads = useMemo(() => {
+    return leads.filter((lead) => {
+      const matchesSearch = search === "" || [lead.name, lead.email, lead.company, lead.phone, lead.source]
+        .filter(Boolean).some((field) => field!.toLowerCase().includes(search.toLowerCase()));
+      const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [leads, search, statusFilter]);
 
   const openNew = () => { setEditing(null); setForm({ name: "", email: "", phone: "", company: "", status: "new", source: "", notes: "" }); setOpen(true); };
   const openEdit = (lead: Lead) => { setEditing(lead); setForm({ name: lead.name, email: lead.email || "", phone: lead.phone || "", company: lead.company || "", status: lead.status, source: lead.source || "", notes: lead.notes || "" }); setOpen(true); };
@@ -60,8 +84,92 @@ export default function Leads() {
     const { error } = await supabase.from("leads").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Lead deleted");
+    if (viewing?.id === id) setViewing(null);
     fetchLeads();
   };
+
+  // Lead Details View
+  if (viewing) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6 max-w-3xl">
+          <Button variant="ghost" onClick={() => setViewing(null)} className="gap-2">
+            <ArrowLeft className="h-4 w-4" /> Back to Leads
+          </Button>
+
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{viewing.name}</h1>
+              <Badge variant="outline" className={`mt-2 ${STATUS_COLORS[viewing.status]}`}>{viewing.status}</Badge>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => { openEdit(viewing); }}>
+                <Pencil className="mr-1 h-4 w-4" /> Edit
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleDelete(viewing.id)} className="text-destructive hover:text-destructive">
+                <Trash2 className="mr-1 h-4 w-4" /> Delete
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Mail className="h-4 w-4" /> Email
+                </CardTitle>
+              </CardHeader>
+              <CardContent><p className="font-medium">{viewing.email || "—"}</p></CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Phone className="h-4 w-4" /> Phone
+                </CardTitle>
+              </CardHeader>
+              <CardContent><p className="font-medium">{viewing.phone || "—"}</p></CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Building2 className="h-4 w-4" /> Company
+                </CardTitle>
+              </CardHeader>
+              <CardContent><p className="font-medium">{viewing.company || "—"}</p></CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Calendar className="h-4 w-4" /> Created
+                </CardTitle>
+              </CardHeader>
+              <CardContent><p className="font-medium">{format(new Date(viewing.created_at), "MMM d, yyyy 'at' h:mm a")}</p></CardContent>
+            </Card>
+          </div>
+
+          {viewing.source && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Source</CardTitle>
+              </CardHeader>
+              <CardContent><p>{viewing.source}</p></CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <StickyNote className="h-4 w-4" /> Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap">{viewing.notes || "No notes added."}</p>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -69,9 +177,32 @@ export default function Leads() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
-            <p className="text-muted-foreground">Manage your sales leads</p>
+            <p className="text-muted-foreground">Manage your sales leads · {filteredLeads.length} {filteredLeads.length === 1 ? "lead" : "leads"}</p>
           </div>
           <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Add Lead</Button>
+        </div>
+
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, company..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="rounded-xl border bg-card">
@@ -82,22 +213,27 @@ export default function Leads() {
                 <TableHead>Email</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead className="w-24">Actions</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="w-28">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {leads.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No leads yet. Add your first lead!</TableCell></TableRow>
-              ) : leads.map((lead) => (
-                <TableRow key={lead.id}>
+              {filteredLeads.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    {leads.length === 0 ? "No leads yet. Add your first lead!" : "No leads match your filters."}
+                  </TableCell>
+                </TableRow>
+              ) : filteredLeads.map((lead) => (
+                <TableRow key={lead.id} className="cursor-pointer" onClick={() => setViewing(lead)}>
                   <TableCell className="font-medium">{lead.name}</TableCell>
                   <TableCell>{lead.email}</TableCell>
                   <TableCell>{lead.company}</TableCell>
                   <TableCell><Badge variant="outline" className={STATUS_COLORS[lead.status]}>{lead.status}</Badge></TableCell>
-                  <TableCell>{lead.source}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{format(new Date(lead.created_at), "MMM d, yyyy")}</TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" onClick={() => setViewing(lead)}><Eye className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(lead)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(lead.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
@@ -132,6 +268,10 @@ export default function Leads() {
                     <SelectItem value="lost">Lost</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Notes</Label>
+                <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} placeholder="Add any notes about this lead..." />
               </div>
               <Button onClick={handleSave} className="w-full">{editing ? "Update" : "Create"} Lead</Button>
             </div>

@@ -30,34 +30,38 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/25 mb-4">
             <BarChart3 className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <CardDescription>Sign in to your CRM account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/signup" className="text-primary hover:underline font-medium">Sign up</Link>
-          </p>
-        </CardContent>
-      </Card>
+          <h1 className="text-xl font-bold tracking-tight">Welcome back</h1>
+          <p className="text-sm text-muted-foreground mt-1">Sign in to CRM Pro</p>
+        </div>
+
+        <Card className="border-border/60 shadow-sm">
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-[13px]">Email</Label>
+                <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-10" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-[13px]">Password</Label>
+                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-10" />
+              </div>
+              <Button type="submit" className="w-full h-10 font-medium" disabled={loading}>
+                {loading ? "Signing in..." : "Sign in"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <p className="mt-6 text-center text-[13px] text-muted-foreground">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-primary hover:underline font-medium">Create one</Link>
+        </p>
+      </div>
     </div>
   );
 }

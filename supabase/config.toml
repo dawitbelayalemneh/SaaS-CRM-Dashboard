@@ -1,1 +1,4 @@
 project_id = "nkiusdtlmnjxhxfdpedi"
+
+[functions.score-lead]
+verify_jwt = false

@@ -54,6 +54,34 @@ export default function Dashboard() {
       setDeals(dealsRes.data || []);
     }
     fetchAll();
+
+    // Real-time subscriptions
+    const leadsChannel = supabase
+      .channel('dashboard-leads')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+        supabase.from("leads").select("id, status").then(({ data }) => setLeads(data || []));
+      })
+      .subscribe();
+
+    const contactsChannel = supabase
+      .channel('dashboard-contacts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contacts' }, () => {
+        supabase.from("contacts").select("id").then(({ data }) => setContactCount((data || []).length));
+      })
+      .subscribe();
+
+    const dealsChannel = supabase
+      .channel('dashboard-deals')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deals' }, () => {
+        supabase.from("deals").select("id, value, stage, created_at").then(({ data }) => setDeals(data || []));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(leadsChannel);
+      supabase.removeChannel(contactsChannel);
+      supabase.removeChannel(dealsChannel);
+    };
   }, []);
 
   const totalLeads = leads.length;

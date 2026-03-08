@@ -2,6 +2,7 @@ import { BarChart3, Users, UserCheck, DollarSign, Settings, LogOut, LayoutDashbo
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
+import { AboutDialog } from "@/components/AboutDialog";
 import {
   Sidebar,
   SidebarContent,
@@ -108,6 +109,11 @@ export function AppSidebar() {
       {/* Footer */}
       <SidebarFooter className="bg-sidebar border-t border-sidebar-border p-3">
         <SidebarMenu>
+          {!collapsed && (
+            <SidebarMenuItem>
+              <AboutDialog />
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => signOut()}

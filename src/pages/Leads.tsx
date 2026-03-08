@@ -12,17 +12,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, Search, Eye, ArrowLeft, Calendar, Building2, Mail, Phone, StickyNote } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Eye, ArrowLeft, Calendar, Building2, Mail, Phone, StickyNote, Sparkles, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Pagination } from "@/components/Pagination";
+import { LeadScoreBadge } from "@/components/LeadScoreBadge";
 
 const ITEMS_PER_PAGE = 10;
 
 type Lead = {
   id: string; name: string; email: string | null; phone: string | null;
   company: string | null; status: string; source: string | null; notes: string | null;
-  created_at: string; updated_at: string;
+  created_at: string; updated_at: string; lead_score: number | null;
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -40,6 +41,13 @@ const STATUSES = [
   { value: "lost", label: "Lost" },
 ];
 
+const SORT_OPTIONS = [
+  { value: "created_at", label: "Newest First" },
+  { value: "score_desc", label: "Highest Score" },
+  { value: "score_asc", label: "Lowest Score" },
+  { value: "name", label: "Name A–Z" },
+];
+
 export default function Leads() {
   const { user } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -48,24 +56,39 @@ export default function Leads() {
   const [viewing, setViewing] = useState<Lead | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("created_at");
   const [currentPage, setCurrentPage] = useState(1);
+  const [scoringId, setScoringId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", status: "new", source: "", notes: "" });
 
   const fetchLeads = async () => {
     const { data } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
-    setLeads(data || []);
+    setLeads((data as Lead[]) || []);
   };
 
   useEffect(() => { fetchLeads(); }, []);
 
   const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
+    const filtered = leads.filter((lead) => {
       const matchesSearch = search === "" || [lead.name, lead.email, lead.company, lead.phone, lead.source]
         .filter(Boolean).some((field) => field!.toLowerCase().includes(search.toLowerCase()));
       const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [leads, search, statusFilter]);
+
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "score_desc":
+          return (b.lead_score ?? -1) - (a.lead_score ?? -1);
+        case "score_asc":
+          return (a.lead_score ?? 101) - (b.lead_score ?? 101);
+        case "name":
+          return a.name.localeCompare(b.name);
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+  }, [leads, search, statusFilter, sortBy]);
 
   const totalPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
   const paginatedLeads = useMemo(() => {
@@ -73,8 +96,7 @@ export default function Leads() {
     return filteredLeads.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredLeads, currentPage]);
 
-  // Reset to page 1 when filters change
-  useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter, sortBy]);
 
   const openNew = () => { setEditing(null); setForm({ name: "", email: "", phone: "", company: "", status: "new", source: "", notes: "" }); setOpen(true); };
   const openEdit = (lead: Lead) => { setEditing(lead); setForm({ name: lead.name, email: lead.email || "", phone: lead.phone || "", company: lead.company || "", status: lead.status, source: lead.source || "", notes: lead.notes || "" }); setOpen(true); };
@@ -106,6 +128,51 @@ export default function Leads() {
     fetchLeads();
   };
 
+  const handleScoreLead = async (leadId: string) => {
+    setScoringId(leadId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Please log in first"); return; }
+
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/score-lead`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ leadId }),
+      });
+
+      const result = await resp.json();
+      if (!resp.ok) {
+        toast.error(result.error || "Failed to score lead");
+        return;
+      }
+
+      toast.success(`Lead scored: ${result.score}/100 — ${result.reasoning}`);
+      await fetchLeads();
+
+      // Update viewing if applicable
+      if (viewing?.id === leadId) {
+        setViewing(prev => prev ? { ...prev, lead_score: result.score } : null);
+      }
+    } catch (e) {
+      toast.error("Failed to score lead");
+    } finally {
+      setScoringId(null);
+    }
+  };
+
+  const handleScoreAll = async () => {
+    const unscored = leads.filter(l => l.lead_score === null);
+    if (unscored.length === 0) { toast.info("All leads already scored"); return; }
+    toast.info(`Scoring ${unscored.length} leads...`);
+    for (const lead of unscored) {
+      await handleScoreLead(lead.id);
+    }
+    toast.success("All leads scored!");
+  };
+
   // Lead Details View
   if (viewing) {
     return (
@@ -118,10 +185,22 @@ export default function Leads() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{viewing.name}</h1>
-              <Badge variant="outline" className={`mt-2 ${STATUS_COLORS[viewing.status]}`}>{viewing.status}</Badge>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <Badge variant="outline" className={STATUS_COLORS[viewing.status]}>{viewing.status}</Badge>
+                <LeadScoreBadge score={viewing.lead_score} size="md" />
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => { openEdit(viewing); }}>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleScoreLead(viewing.id)}
+                disabled={scoringId === viewing.id}
+              >
+                <Sparkles className="mr-1 h-4 w-4" />
+                {scoringId === viewing.id ? "Scoring..." : viewing.lead_score ? "Re-score" : "AI Score"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => openEdit(viewing)}>
                 <Pencil className="mr-1 h-4 w-4" /> Edit
               </Button>
               <Button variant="outline" size="sm" onClick={() => handleDelete(viewing.id)} className="text-destructive hover:text-destructive">
@@ -130,59 +209,55 @@ export default function Leads() {
             </div>
           </div>
 
+          {/* Score Card */}
+          {viewing.lead_score !== null && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="flex items-center justify-center h-14 w-14 rounded-full bg-primary/10 text-primary font-bold text-xl">
+                  {viewing.lead_score}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">AI Conversion Score</p>
+                  <p className="text-xs text-muted-foreground">
+                    {viewing.lead_score >= 75 ? "High likelihood of conversion" :
+                     viewing.lead_score >= 50 ? "Moderate conversion potential" :
+                     viewing.lead_score >= 25 ? "Low conversion likelihood" :
+                     "Very low conversion probability"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Mail className="h-4 w-4" /> Email
-                </CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4" /> Email</CardTitle></CardHeader>
               <CardContent><p className="font-medium break-all">{viewing.email || "—"}</p></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Phone className="h-4 w-4" /> Phone
-                </CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Phone className="h-4 w-4" /> Phone</CardTitle></CardHeader>
               <CardContent><p className="font-medium">{viewing.phone || "—"}</p></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Building2 className="h-4 w-4" /> Company
-                </CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Building2 className="h-4 w-4" /> Company</CardTitle></CardHeader>
               <CardContent><p className="font-medium">{viewing.company || "—"}</p></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Calendar className="h-4 w-4" /> Created
-                </CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4" /> Created</CardTitle></CardHeader>
               <CardContent><p className="font-medium">{format(new Date(viewing.created_at), "MMM d, yyyy 'at' h:mm a")}</p></CardContent>
             </Card>
           </div>
 
           {viewing.source && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Source</CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-muted-foreground">Source</CardTitle></CardHeader>
               <CardContent><p>{viewing.source}</p></CardContent>
             </Card>
           )}
 
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <StickyNote className="h-4 w-4" /> Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap">{viewing.notes || "No notes added."}</p>
-            </CardContent>
+            <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><StickyNote className="h-4 w-4" /> Notes</CardTitle></CardHeader>
+            <CardContent><p className="whitespace-pre-wrap">{viewing.notes || "No notes added."}</p></CardContent>
           </Card>
         </div>
       </DashboardLayout>
@@ -197,29 +272,29 @@ export default function Leads() {
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Leads</h1>
             <p className="text-muted-foreground text-sm">Manage your sales leads · {filteredLeads.length} {filteredLeads.length === 1 ? "lead" : "leads"}</p>
           </div>
-          <Button onClick={openNew} className="w-full sm:w-auto"><Plus className="mr-1 h-4 w-4" /> Add Lead</Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={handleScoreAll} disabled={scoringId !== null} className="gap-1">
+              <Sparkles className="h-4 w-4" /> Score All
+            </Button>
+            <Button onClick={openNew} className="flex-1 sm:flex-none"><Plus className="mr-1 h-4 w-4" /> Add Lead</Button>
+          </div>
         </div>
 
-        {/* Search & Filter Bar */}
+        {/* Search, Filter & Sort Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, email, company..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+            <Input placeholder="Search by name, email, company..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+            <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full sm:w-44">
-              <SelectValue placeholder="Filter by status" />
+              <div className="flex items-center gap-1"><ArrowUpDown className="h-3.5 w-3.5" /><SelectValue /></div>
             </SelectTrigger>
-            <SelectContent>
-              {STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-              ))}
-            </SelectContent>
+            <SelectContent>{SORT_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
 
@@ -232,14 +307,15 @@ export default function Leads() {
                 <TableHead>Email</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Score</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead className="w-28">Actions</TableHead>
+                <TableHead className="w-32">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedLeads.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     {leads.length === 0 ? "No leads yet. Add your first lead!" : "No leads match your filters."}
                   </TableCell>
                 </TableRow>
@@ -249,9 +325,13 @@ export default function Leads() {
                   <TableCell>{lead.email}</TableCell>
                   <TableCell>{lead.company}</TableCell>
                   <TableCell><Badge variant="outline" className={STATUS_COLORS[lead.status]}>{lead.status}</Badge></TableCell>
+                  <TableCell><LeadScoreBadge score={lead.lead_score} /></TableCell>
                   <TableCell className="text-muted-foreground text-sm">{format(new Date(lead.created_at), "MMM d, yyyy")}</TableCell>
                   <TableCell>
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" onClick={() => handleScoreLead(lead.id)} disabled={scoringId === lead.id} title="AI Score">
+                        <Sparkles className={`h-4 w-4 ${scoringId === lead.id ? "animate-spin" : ""}`} />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => setViewing(lead)}><Eye className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(lead)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(lead.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -261,13 +341,7 @@ export default function Leads() {
               ))}
             </TableBody>
           </Table>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={filteredLeads.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-          />
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={filteredLeads.length} itemsPerPage={ITEMS_PER_PAGE} />
         </div>
 
         {/* Mobile Card List */}
@@ -285,11 +359,17 @@ export default function Leads() {
                     {lead.company && <p className="text-xs text-muted-foreground truncate">{lead.company}</p>}
                     {lead.email && <p className="text-xs text-muted-foreground truncate mt-0.5">{lead.email}</p>}
                   </div>
-                  <Badge variant="outline" className={`shrink-0 text-xs ${STATUS_COLORS[lead.status]}`}>{lead.status}</Badge>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Badge variant="outline" className={`text-xs ${STATUS_COLORS[lead.status]}`}>{lead.status}</Badge>
+                    <LeadScoreBadge score={lead.lead_score} />
+                  </div>
                 </div>
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
                   <span className="text-xs text-muted-foreground">{format(new Date(lead.created_at), "MMM d, yyyy")}</span>
                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleScoreLead(lead.id)} disabled={scoringId === lead.id}>
+                      <Sparkles className={`h-3.5 w-3.5 ${scoringId === lead.id ? "animate-spin" : ""}`} />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(lead)}><Pencil className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(lead.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                   </div>
@@ -297,13 +377,7 @@ export default function Leads() {
               </CardContent>
             </Card>
           ))}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={filteredLeads.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-          />
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={filteredLeads.length} itemsPerPage={ITEMS_PER_PAGE} />
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>

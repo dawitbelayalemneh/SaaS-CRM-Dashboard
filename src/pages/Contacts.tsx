@@ -320,11 +320,11 @@ export default function Contacts() {
 
         {/* Mobile Card List */}
         <div className="md:hidden space-y-3">
-          {filteredContacts.length === 0 ? (
+          {paginatedContacts.length === 0 ? (
             <div className="text-center text-muted-foreground py-8 text-sm">
               {contacts.length === 0 ? "No contacts yet." : "No contacts match your search."}
             </div>
-          ) : filteredContacts.map((c) => {
+          ) : paginatedContacts.map((c) => {
             const cd = getContactDeals(c.id);
             return (
               <Card key={c.id} className="cursor-pointer active:scale-[0.99] transition-transform" onClick={() => setViewing(c)}>
@@ -350,6 +350,13 @@ export default function Contacts() {
               </Card>
             );
           })}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredContacts.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>

@@ -14,6 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Search, Eye, ArrowLeft, Mail, Phone, Building2, StickyNote, Calendar, DollarSign, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Pagination } from "@/components/Pagination";
+
+const ITEMS_PER_PAGE = 10;
 
 type Deal = {
   id: string; title: string; value: number | null; stage: string;
@@ -42,6 +45,7 @@ export default function Contacts() {
   const [editing, setEditing] = useState<Contact | null>(null);
   const [viewing, setViewing] = useState<Contact | null>(null);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", job_title: "", notes: "" });
 
   const fetchData = async () => {
@@ -62,6 +66,15 @@ export default function Contacts() {
       [c.name, c.email, c.company, c.phone, c.job_title].filter(Boolean).some((f) => f!.toLowerCase().includes(q))
     );
   }, [contacts, search]);
+
+  const totalPages = Math.ceil(filteredContacts.length / ITEMS_PER_PAGE);
+  const paginatedContacts = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredContacts.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredContacts, currentPage]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => { setCurrentPage(1); }, [search]);
 
   const getContactDeals = (contactId: string) => deals.filter((d) => d.contact_id === contactId);
 

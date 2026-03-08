@@ -1,7 +1,8 @@
-import { BarChart3, Users, UserCheck, DollarSign, Settings, LogOut, LayoutDashboard } from "lucide-react";
+import { BarChart3, Users, UserCheck, DollarSign, Settings, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useRole } from "@/hooks/useRole";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +22,10 @@ const navItems = [
   { title: "Contacts", url: "/contacts", icon: UserCheck },
   { title: "Deals", url: "/deals", icon: DollarSign },
   { title: "Settings", url: "/settings", icon: Settings },
+];
+
+const adminItems = [
+  { title: "User Management", url: "/admin/users", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {

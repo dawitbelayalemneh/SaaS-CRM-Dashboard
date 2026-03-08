@@ -19,6 +19,7 @@ import { Pagination } from "@/components/Pagination";
 import { LeadScoreBadge } from "@/components/LeadScoreBadge";
 import { LeadInsights } from "@/components/LeadInsights";
 import { LeadEmailGenerator } from "@/components/LeadEmailGenerator";
+import { NoteSummarizer } from "@/components/NoteSummarizer";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -260,7 +261,10 @@ export default function Leads() {
 
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><StickyNote className="h-4 w-4" /> Notes</CardTitle></CardHeader>
-            <CardContent><p className="whitespace-pre-wrap">{viewing.notes || "No notes added."}</p></CardContent>
+            <CardContent>
+              <p className="whitespace-pre-wrap">{viewing.notes || "No notes added."}</p>
+              <NoteSummarizer notes={viewing.notes} />
+            </CardContent>
           </Card>
 
           <LeadInsights leadId={viewing.id} />

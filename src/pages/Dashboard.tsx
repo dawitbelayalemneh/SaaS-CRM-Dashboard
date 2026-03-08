@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { TaskRecommendations } from "@/components/TaskRecommendations";
 import { SalesInsightsCard } from "@/components/SalesInsightsCard";
-import { ChatAssistant } from "@/components/ChatAssistant";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend,
@@ -223,9 +222,8 @@ export default function Dashboard() {
         {/* AI Sales Insights */}
         <SalesInsightsCard />
 
-        {/* AI Assistant + Recommendations + Activity */}
+        {/* AI Recommendations + Activity */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <ChatAssistant />
           <TaskRecommendations variant="card" />
         </div>
 

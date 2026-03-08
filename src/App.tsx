@@ -13,6 +13,7 @@ import Deals from "./pages/Deals";
 import Settings from "./pages/Settings";
 import AdminUsers from "./pages/AdminUsers";
 import NotFound from "./pages/NotFound";
+import { ChatAssistant } from "@/components/ChatAssistant";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ChatAssistant />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

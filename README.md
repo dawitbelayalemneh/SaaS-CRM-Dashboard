@@ -1,73 +1,110 @@
-# Welcome to your Lovable project
+# SalesPulse CRM
 
-## Project info
+A modern, full-featured Customer Relationship Management dashboard built with React, TypeScript, and Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Features
 
-## How can I edit this code?
+- **Dashboard** — Overview of key metrics (total leads, active deals, revenue, conversion rate) with interactive charts
+- **Leads Management** — Track and manage sales leads with status tracking (New → Contacted → Qualified → Lost)
+- **Contacts** — Store and organize customer contact information, company details, and notes
+- **Deals Pipeline** — Kanban-style deal tracking across stages: Prospecting, Qualification, Proposal, Negotiation, Won, and Lost
+- **Activity Timeline** — Automatic logging of all CRM actions for full audit history
+- **Admin Panel** — Role-based user management (Admin / Team Member)
+- **Settings** — Update your profile, company info, and preferences
 
-There are several ways of editing your application.
+## Getting Started
 
-**Use Lovable**
+### Prerequisites
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Node.js 18+ and npm
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:5173`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Usage Guide
 
-**Use GitHub Codespaces**
+### 1. Sign Up & Log In
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Create an account on the signup page. Verify your email, then log in. The first user is automatically assigned the **Admin** role.
 
-## What technologies are used for this project?
+### 2. Dashboard
 
-This project is built with:
+After logging in you land on the Dashboard, which displays:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Card | Description |
+|------|-------------|
+| Total Leads | Count of all leads in the system |
+| Active Deals | Deals not yet won or lost |
+| Revenue | Sum of all won deal values |
+| Conversion Rate | Percentage of leads converted to deals |
 
-## How can I deploy this project?
+Charts show monthly revenue trends and deal stage distribution.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### 3. Managing Leads
 
-## Can I connect a custom domain to my Lovable project?
+Navigate to **Leads** from the sidebar.
 
-Yes, you can!
+- Click **Add Lead** to create a new lead with name, email, phone, company, source, and status
+- Edit or delete leads using the action buttons on each row
+- Filter by status to focus on specific pipeline stages
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### 4. Managing Contacts
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Navigate to **Contacts** from the sidebar.
+
+- Click **Add Contact** to store a contact's details (name, email, phone, company, job title, notes)
+- Edit or delete contacts as needed
+- Contacts can be linked to deals for relationship tracking
+
+### 5. Deals Pipeline
+
+Navigate to **Deals** from the sidebar.
+
+- **Desktop**: Drag and drop deal cards between stage columns (Prospecting → Won)
+- **Mobile**: Use the stage filter chips to view deals by stage
+- Click **Add Deal** to create a new deal with title, value, stage, expected close date, and linked contact
+- Edit or delete deals from the card actions
+
+### 6. Admin — User Management
+
+Navigate to **Admin Users** from the sidebar (visible to admins only).
+
+- View all registered users and their roles
+- Assign roles: **Admin** or **Team Member**
+
+### 7. Settings
+
+Navigate to **Settings** to update:
+
+- Full name, phone, job title, and company
+- Profile avatar URL
+
+## Tech Stack
+
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Backend**: Lovable Cloud (database, auth, real-time)
+- **Charts**: Recharts
+- **Drag & Drop**: @hello-pangea/dnd
+- **Routing**: React Router v6
+
+## Responsive Design
+
+The app is fully responsive:
+
+- Tables convert to card layouts on mobile
+- The deals Kanban switches to a filterable list view
+- Sidebar collapses into a sheet overlay
+- Forms stack vertically on small screens
+
+## License
+
+Private — All rights reserved.

@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { logActivity } from "@/lib/logActivity";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,20 +74,24 @@ export default function Contacts() {
       const { error } = await supabase.from("contacts").update(form).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Contact updated");
+      await logActivity({ action: "Updated contact", entityType: "contact", entityId: editing.id, entityName: form.name });
       if (viewing?.id === editing.id) setViewing({ ...viewing!, ...form });
     } else {
-      const { error } = await supabase.from("contacts").insert({ ...form, user_id: user!.id });
+      const { data, error } = await supabase.from("contacts").insert({ ...form, user_id: user!.id }).select("id").single();
       if (error) { toast.error(error.message); return; }
       toast.success("Contact created");
+      await logActivity({ action: "Created new contact", entityType: "contact", entityId: data?.id, entityName: form.name });
     }
     setOpen(false);
     fetchData();
   };
 
   const handleDelete = async (id: string) => {
+    const contact = contacts.find((c) => c.id === id);
     const { error } = await supabase.from("contacts").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Contact deleted");
+    await logActivity({ action: "Deleted contact", entityType: "contact", entityId: id, entityName: contact?.name });
     if (viewing?.id === id) setViewing(null);
     fetchData();
   };

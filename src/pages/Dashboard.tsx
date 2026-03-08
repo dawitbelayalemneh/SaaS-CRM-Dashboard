@@ -4,6 +4,7 @@ import { StatCard } from "@/components/StatCard";
 import { Users, Trophy, XCircle, DollarSign, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend,
@@ -201,6 +202,16 @@ export default function Dashboard() {
                 />
               </AreaChart>
             </ResponsiveContainer>
+           </CardContent>
+        </Card>
+
+        {/* Activity Timeline */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ActivityTimeline limit={15} />
           </CardContent>
         </Card>
       </div>

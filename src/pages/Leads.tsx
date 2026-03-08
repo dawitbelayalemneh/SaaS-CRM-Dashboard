@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { logActivity } from "@/lib/logActivity";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,19 +72,23 @@ export default function Leads() {
       const { error } = await supabase.from("leads").update(form).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Lead updated");
+      await logActivity({ action: "Updated lead", entityType: "lead", entityId: editing.id, entityName: form.name, details: `Status: ${form.status}` });
     } else {
-      const { error } = await supabase.from("leads").insert({ ...form, user_id: user!.id });
+      const { data, error } = await supabase.from("leads").insert({ ...form, user_id: user!.id }).select("id").single();
       if (error) { toast.error(error.message); return; }
       toast.success("Lead created");
+      await logActivity({ action: "Created new lead", entityType: "lead", entityId: data?.id, entityName: form.name });
     }
     setOpen(false);
     fetchLeads();
   };
 
   const handleDelete = async (id: string) => {
+    const lead = leads.find((l) => l.id === id);
     const { error } = await supabase.from("leads").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Lead deleted");
+    await logActivity({ action: "Deleted lead", entityType: "lead", entityId: id, entityName: lead?.name });
     if (viewing?.id === id) setViewing(null);
     fetchLeads();
   };

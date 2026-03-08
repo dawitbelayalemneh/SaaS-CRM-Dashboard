@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, Send, Sparkles, User, Bot, Loader2 } from "lucide-react";
+import { MessageSquare, Send, Sparkles, User, Bot, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -24,7 +24,7 @@ export function ChatAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [open, setOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,122 +77,121 @@ export function ChatAssistant() {
     }
   };
 
-  if (!expanded) {
-    return (
-      <Card className="border-dashed">
-        <CardContent className="p-6 flex flex-col items-center gap-3 text-center">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <MessageSquare className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <p className="font-semibold">AI CRM Assistant</p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              Ask questions about your leads, deals, and tasks. Get instant answers powered by AI.
-            </p>
-          </div>
-          <Button onClick={() => setExpanded(true)} className="gap-2">
-            <Sparkles className="h-4 w-4" /> Start Chat
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="flex flex-col h-[500px]">
-      <CardHeader className="pb-2 shrink-0">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" /> AI CRM Assistant
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col min-h-0 pt-0">
-        <ScrollArea className="flex-1 pr-3" ref={scrollRef}>
-          {messages.length === 0 ? (
-            <div className="py-4 space-y-3">
-              <p className="text-sm text-muted-foreground text-center">
-                Ask me anything about your CRM data. Try one of these:
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {EXAMPLE_QUESTIONS.map((q, i) => (
-                  <Button
-                    key={i}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-auto py-1.5 px-3"
-                    onClick={() => sendMessage(q)}
-                  >
-                    {q}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4 py-2">
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="shrink-0 h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
-                      <Bot className="h-4 w-4 text-primary" />
+    <>
+      {/* Floating circular button */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center"
+        >
+          <MessageSquare className="h-6 w-6" />
+        </button>
+      )}
+
+      {/* Chat panel */}
+      {open && (
+        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)]">
+          <Card className="flex flex-col h-[520px] shadow-2xl border-border">
+            <CardHeader className="pb-2 shrink-0 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" /> AI Assistant
+              </CardTitle>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col min-h-0 pt-0">
+              <ScrollArea className="flex-1 pr-3" ref={scrollRef}>
+                {messages.length === 0 ? (
+                  <div className="py-4 space-y-3">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Ask me anything about your CRM data:
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {EXAMPLE_QUESTIONS.map((q, i) => (
+                        <Button
+                          key={i}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-auto py-1.5 px-3"
+                          onClick={() => sendMessage(q)}
+                        >
+                          {q}
+                        </Button>
+                      ))}
                     </div>
-                  )}
-                  <div
-                    className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}
-                  >
-                    {msg.role === "assistant" ? (
-                      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:my-2">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="space-y-4 py-2">
+                    {messages.map((msg, i) => (
+                      <div
+                        key={i}
+                        className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        {msg.role === "assistant" && (
+                          <div className="shrink-0 h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                            <Bot className="h-4 w-4 text-primary" />
+                          </div>
+                        )}
+                        <div
+                          className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
+                            msg.role === "user"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                          }`}
+                        >
+                          {msg.role === "assistant" ? (
+                            <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:my-2">
+                              <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p>{msg.content}</p>
+                          )}
+                        </div>
+                        {msg.role === "user" && (
+                          <div className="shrink-0 h-7 w-7 rounded-full bg-primary flex items-center justify-center mt-0.5">
+                            <User className="h-4 w-4 text-primary-foreground" />
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <p>{msg.content}</p>
+                    ))}
+                    {loading && (
+                      <div className="flex gap-2.5">
+                        <div className="shrink-0 h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Bot className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="bg-muted rounded-xl px-3.5 py-2.5 text-sm flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Thinking...
+                        </div>
+                      </div>
                     )}
                   </div>
-                  {msg.role === "user" && (
-                    <div className="shrink-0 h-7 w-7 rounded-full bg-primary flex items-center justify-center mt-0.5">
-                      <User className="h-4 w-4 text-primary-foreground" />
-                    </div>
-                  )}
-                </div>
-              ))}
-              {loading && (
-                <div className="flex gap-2.5">
-                  <div className="shrink-0 h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Bot className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="bg-muted rounded-xl px-3.5 py-2.5 text-sm flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Thinking...
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </ScrollArea>
+                )}
+              </ScrollArea>
 
-        <div className="flex gap-2 pt-3 shrink-0">
-          <Input
-            placeholder="Ask about your leads, deals, or tasks..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={loading}
-            className="flex-1"
-          />
-          <Button
-            onClick={() => sendMessage()}
-            disabled={!input.trim() || loading}
-            size="icon"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+              <div className="flex gap-2 pt-3 shrink-0">
+                <Input
+                  placeholder="Ask about your CRM..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={loading}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={() => sendMessage()}
+                  disabled={!input.trim() || loading}
+                  size="icon"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
 }

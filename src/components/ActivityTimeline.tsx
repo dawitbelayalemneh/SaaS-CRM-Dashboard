@@ -20,10 +20,10 @@ const ICON_MAP: Record<string, typeof Users> = {
 };
 
 const COLOR_MAP: Record<string, string> = {
-  lead: "bg-primary/10 text-primary",
-  deal: "bg-chart-2/10 text-chart-2",
-  contact: "bg-chart-3/10 text-chart-3",
-  note: "bg-chart-4/10 text-chart-4",
+  lead: "bg-primary/10 text-primary ring-1 ring-primary/15",
+  deal: "bg-accent/10 text-accent ring-1 ring-accent/15",
+  contact: "bg-chart-3/10 text-chart-3 ring-1 ring-chart-3/15",
+  note: "bg-chart-4/10 text-chart-4 ring-1 ring-chart-4/15",
 };
 
 export function ActivityTimeline({ limit = 20 }: { limit?: number }) {
@@ -45,52 +45,55 @@ export function ActivityTimeline({ limit = 20 }: { limit?: number }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground">
+      <div className="flex items-center justify-center py-10 text-muted-foreground">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent mr-2" />
-        Loading activity...
+        <span className="text-sm">Loading activity...</span>
       </div>
     );
   }
 
   if (activities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-        <Activity className="h-8 w-8 mb-2 opacity-40" />
-        <p className="text-sm">No activity yet. Start adding leads, deals, or contacts!</p>
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-3">
+          <Activity className="h-5 w-5 opacity-50" />
+        </div>
+        <p className="text-sm font-medium">No activity yet</p>
+        <p className="text-xs mt-1">Actions will appear here as you use the CRM</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0">
       {activities.map((activity, index) => {
         const Icon = ICON_MAP[activity.entity_type] || Activity;
         const colorClass = COLOR_MAP[activity.entity_type] || "bg-muted text-muted-foreground";
 
         return (
-          <div key={activity.id} className="flex gap-3 py-3">
-            {/* Timeline line + icon */}
+          <div key={activity.id} className="flex gap-3 group">
+            {/* Timeline */}
             <div className="flex flex-col items-center">
-              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${colorClass}`}>
-                <Icon className="h-4 w-4" />
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${colorClass} transition-transform duration-150 group-hover:scale-110`}>
+                <Icon className="h-3.5 w-3.5" />
               </div>
               {index < activities.length - 1 && (
-                <div className="w-px flex-1 bg-border mt-1" />
+                <div className="w-px flex-1 bg-border/60 my-1" />
               )}
             </div>
 
             {/* Content */}
-            <div className="flex-1 min-w-0 pb-1">
-              <p className="text-sm">
-                <span className="font-medium">{activity.action}</span>
+            <div className="flex-1 min-w-0 pb-4">
+              <p className="text-[13px] leading-snug">
+                <span className="font-medium text-foreground">{activity.action}</span>
                 {activity.entity_name && (
-                  <span className="text-foreground font-semibold"> {activity.entity_name}</span>
+                  <span className="font-semibold text-foreground"> {activity.entity_name}</span>
                 )}
               </p>
               {activity.details && (
                 <p className="text-xs text-muted-foreground mt-0.5">{activity.details}</p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[11px] text-muted-foreground/70 mt-1">
                 {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
               </p>
             </div>

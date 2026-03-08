@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { TaskRecommendations } from "@/components/TaskRecommendations";
 import { SalesInsightsCard } from "@/components/SalesInsightsCard";
+import { ChatAssistant } from "@/components/ChatAssistant";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend,
@@ -222,20 +223,21 @@ export default function Dashboard() {
         {/* AI Sales Insights */}
         <SalesInsightsCard />
 
-        {/* AI Recommendations + Activity */}
+        {/* AI Assistant + Recommendations + Activity */}
         <div className="grid gap-6 lg:grid-cols-2">
+          <ChatAssistant />
           <TaskRecommendations variant="card" />
-
-          <Card className="border-border/60 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
-              <CardDescription className="text-xs">Latest actions across your CRM</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <ActivityTimeline limit={15} />
-            </CardContent>
-          </Card>
         </div>
+
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
+            <CardDescription className="text-xs">Latest actions across your CRM</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <ActivityTimeline limit={15} />
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

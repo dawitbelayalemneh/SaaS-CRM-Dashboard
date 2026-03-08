@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.sales-insights]
 verify_jwt = false
+
+[functions.chat-assistant]
+verify_jwt = false

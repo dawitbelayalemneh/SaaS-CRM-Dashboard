@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { Pagination } from "@/components/Pagination";
 import { LeadScoreBadge } from "@/components/LeadScoreBadge";
 import { LeadInsights } from "@/components/LeadInsights";
+import { LeadEmailGenerator } from "@/components/LeadEmailGenerator";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -201,6 +202,7 @@ export default function Leads() {
                 <Sparkles className="mr-1 h-4 w-4" />
                 {scoringId === viewing.id ? "Scoring..." : viewing.lead_score ? "Re-score" : "AI Score"}
               </Button>
+              <LeadEmailGenerator leadId={viewing.id} leadName={viewing.name} leadEmail={viewing.email} />
               <Button variant="outline" size="sm" onClick={() => openEdit(viewing)}>
                 <Pencil className="mr-1 h-4 w-4" /> Edit
               </Button>

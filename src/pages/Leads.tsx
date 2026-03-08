@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Pagination } from "@/components/Pagination";
 import { LeadScoreBadge } from "@/components/LeadScoreBadge";
+import { LeadInsights } from "@/components/LeadInsights";
 
 const ITEMS_PER_PAGE = 10;
 

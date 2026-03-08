@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.generate-email]
 verify_jwt = false
+
+[functions.summarize-notes]
+verify_jwt = false

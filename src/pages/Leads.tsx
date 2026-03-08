@@ -20,6 +20,7 @@ import { LeadScoreBadge } from "@/components/LeadScoreBadge";
 import { LeadInsights } from "@/components/LeadInsights";
 import { LeadEmailGenerator } from "@/components/LeadEmailGenerator";
 import { NoteSummarizer } from "@/components/NoteSummarizer";
+import { TaskRecommendations } from "@/components/TaskRecommendations";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -268,6 +269,7 @@ export default function Leads() {
           </Card>
 
           <LeadInsights leadId={viewing.id} />
+          <TaskRecommendations leadId={viewing.id} />
         </div>
       </DashboardLayout>
     );

@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.summarize-notes]
 verify_jwt = false
+
+[functions.recommend-tasks]
+verify_jwt = false

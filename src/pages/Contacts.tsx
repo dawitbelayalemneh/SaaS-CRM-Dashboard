@@ -123,11 +123,11 @@ export default function Contacts() {
             <ArrowLeft className="h-4 w-4" /> Back to Contacts
           </Button>
 
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{viewing.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{viewing.name}</h1>
               {viewing.job_title && viewing.company && (
-                <p className="text-muted-foreground mt-1">{viewing.job_title} at {viewing.company}</p>
+                <p className="text-muted-foreground mt-1 text-sm">{viewing.job_title} at {viewing.company}</p>
               )}
             </div>
             <div className="flex gap-2">
@@ -140,12 +140,12 @@ export default function Contacts() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4" /> Email</CardTitle>
               </CardHeader>
-              <CardContent><p className="font-medium">{viewing.email || "—"}</p></CardContent>
+              <CardContent><p className="font-medium break-all">{viewing.email || "—"}</p></CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-3">
@@ -177,7 +177,7 @@ export default function Contacts() {
           {/* Associated Deals */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                 <CardTitle className="text-base flex items-center gap-2"><Briefcase className="h-4 w-4" /> Associated Deals</CardTitle>
                 <p className="text-sm text-muted-foreground">${totalDealValue.toLocaleString()} total</p>
               </div>
@@ -187,24 +187,23 @@ export default function Contacts() {
                 <p className="text-sm text-muted-foreground">No deals linked to this contact.</p>
               ) : (
                 contactDeals.map((deal) => (
-                  <div key={deal.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div key={deal.id} className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border p-3 gap-2">
                     <div className="space-y-1">
                       <p className="font-medium text-sm">{deal.title}</p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="outline" className={STAGE_COLORS[deal.stage] || ""}>{deal.stage}</Badge>
                         <span className="text-sm text-muted-foreground flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />{Number(deal.value || 0).toLocaleString()}
                         </span>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => unlinkDeal(deal.id)} className="text-destructive text-xs">
+                    <Button variant="ghost" size="sm" onClick={() => unlinkDeal(deal.id)} className="text-destructive text-xs self-end sm:self-auto">
                       Unlink
                     </Button>
                   </div>
                 ))
               )}
 
-              {/* Link an existing deal */}
               {unlinkedDeals.length > 0 && (
                 <div className="pt-2 border-t">
                   <p className="text-xs text-muted-foreground mb-2">Link an existing deal:</p>
@@ -236,12 +235,12 @@ export default function Contacts() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
-            <p className="text-muted-foreground">{filteredContacts.length} {filteredContacts.length === 1 ? "contact" : "contacts"}</p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Contacts</h1>
+            <p className="text-muted-foreground text-sm">{filteredContacts.length} {filteredContacts.length === 1 ? "contact" : "contacts"}</p>
           </div>
-          <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Add Contact</Button>
+          <Button onClick={openNew} className="w-full sm:w-auto"><Plus className="mr-1 h-4 w-4" /> Add Contact</Button>
         </div>
 
         <div className="relative">
@@ -249,7 +248,8 @@ export default function Contacts() {
           <Input placeholder="Search by name, email, company..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
 
-        <div className="rounded-xl border bg-card">
+        {/* Desktop Table */}
+        <div className="hidden md:block rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -298,16 +298,50 @@ export default function Contacts() {
           </Table>
         </div>
 
+        {/* Mobile Card List */}
+        <div className="md:hidden space-y-3">
+          {filteredContacts.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8 text-sm">
+              {contacts.length === 0 ? "No contacts yet." : "No contacts match your search."}
+            </div>
+          ) : filteredContacts.map((c) => {
+            const cd = getContactDeals(c.id);
+            return (
+              <Card key={c.id} className="cursor-pointer active:scale-[0.99] transition-transform" onClick={() => setViewing(c)}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{c.name}</p>
+                      {c.job_title && <p className="text-xs text-muted-foreground truncate">{c.job_title}</p>}
+                      {c.company && <p className="text-xs text-muted-foreground truncate">{c.company}</p>}
+                    </div>
+                    {cd.length > 0 && (
+                      <Badge variant="outline" className="shrink-0 text-xs">{cd.length} deal{cd.length > 1 ? "s" : ""}</Badge>
+                    )}
+                  </div>
+                  {c.email && <p className="text-xs text-muted-foreground truncate mt-2">{c.email}</p>}
+                  <div className="flex items-center justify-end mt-3 pt-3 border-t border-border/50">
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(c.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit Contact" : "Add Contact"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2"><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
                 <div className="space-y-2"><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Company</Label><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></div>
                 <div className="space-y-2"><Label>Job Title</Label><Input value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} /></div>
               </div>

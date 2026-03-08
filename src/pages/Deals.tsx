@@ -11,10 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { logActivity } from "@/lib/logActivity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, DollarSign, ArrowLeft, Calendar, Building2, StickyNote, Pencil, Trash2 } from "lucide-react";
+import { Plus, DollarSign, ArrowLeft, Calendar, StickyNote, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Deal = {
   id: string; title: string; value: number | null; stage: string;
@@ -32,10 +33,12 @@ const STAGES = [
 
 export default function Deals() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [viewing, setViewing] = useState<Deal | null>(null);
+  const [mobileStageFilter, setMobileStageFilter] = useState("all");
   const [form, setForm] = useState({ title: "", value: "", stage: "new", expected_close_date: "", notes: "" });
 
   const fetchDeals = async () => {
@@ -110,7 +113,6 @@ export default function Deals() {
     const oldStageLabel = STAGES.find((s) => s.value === result.source.droppableId)?.label;
     const newStageLabel = STAGES.find((s) => s.value === newStage)?.label;
 
-    // Optimistic update
     setDeals((prev) => prev.map((d) => d.id === dealId ? { ...d, stage: newStage } : d));
 
     const { error } = await supabase.from("deals").update({ stage: newStage }).eq("id", dealId);
@@ -135,12 +137,12 @@ export default function Deals() {
             <ArrowLeft className="h-4 w-4" /> Back to Pipeline
           </Button>
 
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{viewing.title}</h1>
-              <div className="flex items-center gap-2 mt-2">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{viewing.title}</h1>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <Badge variant="outline" className={stageInfo.color}>{stageInfo.label}</Badge>
-                <span className="text-2xl font-bold text-primary">${Number(viewing.value || 0).toLocaleString()}</span>
+                <span className="text-xl sm:text-2xl font-bold text-primary">${Number(viewing.value || 0).toLocaleString()}</span>
               </div>
             </div>
             <div className="flex gap-2">
@@ -181,7 +183,7 @@ export default function Deals() {
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -227,91 +229,160 @@ export default function Deals() {
     );
   }
 
+  // Mobile deals list view
+  const mobileFilteredDeals = mobileStageFilter === "all" ? deals : deals.filter((d) => d.stage === mobileStageFilter);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Deals Pipeline</h1>
-            <p className="text-muted-foreground">Drag and drop deals between stages</p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Deals Pipeline</h1>
+            <p className="text-muted-foreground text-sm">{isMobile ? "Tap a deal to view details" : "Drag and drop deals between stages"}</p>
           </div>
-          <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Add Deal</Button>
+          <Button onClick={openNew} className="w-full sm:w-auto"><Plus className="mr-1 h-4 w-4" /> Add Deal</Button>
         </div>
 
-        <DragDropContext onDragEnd={onDragEnd}>
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {STAGES.map((stage) => {
-              const stageDeals = deals.filter((d) => d.stage === stage.value);
-              const total = stageDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
-              return (
-                <div key={stage.value} className="flex-shrink-0 w-64">
-                  <div className={`rounded-xl border ${stage.color} p-3 mb-3`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`h-2.5 w-2.5 rounded-full ${stage.dot}`} />
-                        <h3 className={`text-sm font-semibold ${stage.headerColor}`}>{stage.label}</h3>
-                      </div>
-                      <Badge variant="outline" className="text-xs">{stageDeals.length}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">${total.toLocaleString()}</p>
-                  </div>
+        {/* Mobile: Stage filter + card list */}
+        {isMobile ? (
+          <div className="space-y-4">
+            {/* Stage filter chips */}
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+              <Button
+                size="sm"
+                variant={mobileStageFilter === "all" ? "default" : "outline"}
+                onClick={() => setMobileStageFilter("all")}
+                className="shrink-0"
+              >
+                All ({deals.length})
+              </Button>
+              {STAGES.map((stage) => {
+                const count = deals.filter((d) => d.stage === stage.value).length;
+                return (
+                  <Button
+                    key={stage.value}
+                    size="sm"
+                    variant={mobileStageFilter === stage.value ? "default" : "outline"}
+                    onClick={() => setMobileStageFilter(stage.value)}
+                    className="shrink-0"
+                  >
+                    <span className={`h-2 w-2 rounded-full mr-1.5 ${stage.dot}`} />
+                    {stage.label} ({count})
+                  </Button>
+                );
+              })}
+            </div>
 
-                  <Droppable droppableId={stage.value}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`min-h-[200px] rounded-xl p-2 transition-colors space-y-2 ${
-                          snapshot.isDraggingOver ? "bg-primary/5 ring-2 ring-primary/20" : "bg-muted/30"
-                        }`}
-                      >
-                        {stageDeals.map((deal, index) => (
-                          <Draggable key={deal.id} draggableId={deal.id} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`transition-shadow ${snapshot.isDragging ? "shadow-lg rotate-2" : ""}`}
-                              >
-                                <Card
-                                  className="cursor-pointer hover:shadow-md transition-shadow border-border/60"
-                                  onClick={() => setViewing(deal)}
-                                >
-                                  <CardContent className="p-4 space-y-2">
-                                    <p className="font-medium text-sm leading-tight">{deal.title}</p>
-                                    <div className="flex items-center gap-1 text-sm font-semibold text-primary">
-                                      <DollarSign className="h-3.5 w-3.5" />
-                                      {Number(deal.value || 0).toLocaleString()}
-                                    </div>
-                                    {deal.expected_close_date && (
-                                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                        <Calendar className="h-3 w-3" />
-                                        {format(new Date(deal.expected_close_date), "MMM d, yyyy")}
-                                      </p>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
+            {/* Deal cards */}
+            <div className="space-y-3">
+              {mobileFilteredDeals.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8 text-sm">No deals in this stage</div>
+              ) : mobileFilteredDeals.map((deal) => {
+                const stageInfo = getStage(deal.stage);
+                return (
+                  <Card key={deal.id} className="cursor-pointer active:scale-[0.99] transition-transform" onClick={() => setViewing(deal)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{deal.title}</p>
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <Badge variant="outline" className={`text-xs ${stageInfo.color}`}>{stageInfo.label}</Badge>
+                            <span className="text-sm font-semibold text-primary flex items-center gap-0.5">
+                              <DollarSign className="h-3.5 w-3.5" />
+                              {Number(deal.value || 0).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </Droppable>
-                </div>
-              );
-            })}
+                      {deal.expected_close_date && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+                          <Calendar className="h-3 w-3" />
+                          {format(new Date(deal.expected_close_date), "MMM d, yyyy")}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        </DragDropContext>
+        ) : (
+          /* Desktop: Kanban board */
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {STAGES.map((stage) => {
+                const stageDeals = deals.filter((d) => d.stage === stage.value);
+                const total = stageDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+                return (
+                  <div key={stage.value} className="flex-shrink-0 w-64">
+                    <div className={`rounded-xl border ${stage.color} p-3 mb-3`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 rounded-full ${stage.dot}`} />
+                          <h3 className={`text-sm font-semibold ${stage.headerColor}`}>{stage.label}</h3>
+                        </div>
+                        <Badge variant="outline" className="text-xs">{stageDeals.length}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">${total.toLocaleString()}</p>
+                    </div>
+
+                    <Droppable droppableId={stage.value}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`min-h-[200px] rounded-xl p-2 transition-colors space-y-2 ${
+                            snapshot.isDraggingOver ? "bg-primary/5 ring-2 ring-primary/20" : "bg-muted/30"
+                          }`}
+                        >
+                          {stageDeals.map((deal, index) => (
+                            <Draggable key={deal.id} draggableId={deal.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`transition-shadow ${snapshot.isDragging ? "shadow-lg rotate-2" : ""}`}
+                                >
+                                  <Card
+                                    className="cursor-pointer hover:shadow-md transition-shadow border-border/60"
+                                    onClick={() => setViewing(deal)}
+                                  >
+                                    <CardContent className="p-4 space-y-2">
+                                      <p className="font-medium text-sm leading-tight">{deal.title}</p>
+                                      <div className="flex items-center gap-1 text-sm font-semibold text-primary">
+                                        <DollarSign className="h-3.5 w-3.5" />
+                                        {Number(deal.value || 0).toLocaleString()}
+                                      </div>
+                                      {deal.expected_close_date && (
+                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          {format(new Date(deal.expected_close_date), "MMM d, yyyy")}
+                                        </p>
+                                      )}
+                                    </CardContent>
+                                  </Card>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                );
+              })}
+            </div>
+          </DragDropContext>
+        )}
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit Deal" : "Add Deal"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2"><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Value ($)</Label><Input type="number" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} /></div>
                 <div className="space-y-2">
                   <Label>Stage</Label>

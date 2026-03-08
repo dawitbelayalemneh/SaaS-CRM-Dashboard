@@ -102,9 +102,9 @@ export default function Leads() {
             <ArrowLeft className="h-4 w-4" /> Back to Leads
           </Button>
 
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{viewing.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{viewing.name}</h1>
               <Badge variant="outline" className={`mt-2 ${STATUS_COLORS[viewing.status]}`}>{viewing.status}</Badge>
             </div>
             <div className="flex gap-2">
@@ -117,14 +117,14 @@ export default function Leads() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Mail className="h-4 w-4" /> Email
                 </CardTitle>
               </CardHeader>
-              <CardContent><p className="font-medium">{viewing.email || "—"}</p></CardContent>
+              <CardContent><p className="font-medium break-all">{viewing.email || "—"}</p></CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-3">
@@ -179,12 +179,12 @@ export default function Leads() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
-            <p className="text-muted-foreground">Manage your sales leads · {filteredLeads.length} {filteredLeads.length === 1 ? "lead" : "leads"}</p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Leads</h1>
+            <p className="text-muted-foreground text-sm">Manage your sales leads · {filteredLeads.length} {filteredLeads.length === 1 ? "lead" : "leads"}</p>
           </div>
-          <Button onClick={openNew}><Plus className="mr-1 h-4 w-4" /> Add Lead</Button>
+          <Button onClick={openNew} className="w-full sm:w-auto"><Plus className="mr-1 h-4 w-4" /> Add Lead</Button>
         </div>
 
         {/* Search & Filter Bar */}
@@ -210,7 +210,8 @@ export default function Leads() {
           </Select>
         </div>
 
-        <div className="rounded-xl border bg-card">
+        {/* Desktop Table */}
+        <div className="hidden md:block rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -249,16 +250,45 @@ export default function Leads() {
           </Table>
         </div>
 
+        {/* Mobile Card List */}
+        <div className="md:hidden space-y-3">
+          {filteredLeads.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8 text-sm">
+              {leads.length === 0 ? "No leads yet. Add your first lead!" : "No leads match your filters."}
+            </div>
+          ) : filteredLeads.map((lead) => (
+            <Card key={lead.id} className="cursor-pointer active:scale-[0.99] transition-transform" onClick={() => setViewing(lead)}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate">{lead.name}</p>
+                    {lead.company && <p className="text-xs text-muted-foreground truncate">{lead.company}</p>}
+                    {lead.email && <p className="text-xs text-muted-foreground truncate mt-0.5">{lead.email}</p>}
+                  </div>
+                  <Badge variant="outline" className={`shrink-0 text-xs ${STATUS_COLORS[lead.status]}`}>{lead.status}</Badge>
+                </div>
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                  <span className="text-xs text-muted-foreground">{format(new Date(lead.created_at), "MMM d, yyyy")}</span>
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(lead)}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(lead.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit Lead" : "Add Lead"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2"><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
                 <div className="space-y-2"><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Company</Label><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></div>
                 <div className="space-y-2"><Label>Source</Label><Input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} /></div>
               </div>

@@ -15,6 +15,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, Search, Eye, ArrowLeft, Calendar, Building2, Mail, Phone, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Pagination } from "@/components/Pagination";
+
+const ITEMS_PER_PAGE = 10;
 
 type Lead = {
   id: string; name: string; email: string | null; phone: string | null;
@@ -45,6 +48,7 @@ export default function Leads() {
   const [viewing, setViewing] = useState<Lead | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", status: "new", source: "", notes: "" });
 
   const fetchLeads = async () => {
@@ -62,6 +66,15 @@ export default function Leads() {
       return matchesSearch && matchesStatus;
     });
   }, [leads, search, statusFilter]);
+
+  const totalPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
+  const paginatedLeads = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredLeads.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredLeads, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
 
   const openNew = () => { setEditing(null); setForm({ name: "", email: "", phone: "", company: "", status: "new", source: "", notes: "" }); setOpen(true); };
   const openEdit = (lead: Lead) => { setEditing(lead); setForm({ name: lead.name, email: lead.email || "", phone: lead.phone || "", company: lead.company || "", status: lead.status, source: lead.source || "", notes: lead.notes || "" }); setOpen(true); };

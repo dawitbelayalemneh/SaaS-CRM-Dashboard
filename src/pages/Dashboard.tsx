@@ -5,6 +5,7 @@ import { Users, Trophy, XCircle, DollarSign, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
+import { TaskRecommendations } from "@/components/TaskRecommendations";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend,
@@ -217,17 +218,19 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Activity */}
-        <Card className="border-border/60 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
-            <CardDescription className="text-xs">Latest actions across your CRM</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <ActivityTimeline limit={15} />
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardLayout>
+        {/* AI Recommendations + Activity */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <TaskRecommendations variant="card" />
+
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
+              <CardDescription className="text-xs">Latest actions across your CRM</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <ActivityTimeline limit={15} />
+            </CardContent>
+          </Card>
+        </div>
   );
 }
